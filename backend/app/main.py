@@ -10,7 +10,7 @@ import os
 from . import db as _db
 from .models import Screenshot, Alliance
 from datetime import datetime
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TEMPLATES_DIR = BASE_DIR / "backend" / "app" / "templates"
@@ -30,9 +30,17 @@ def on_startup():
 
 @app.get("/", response_class=HTMLResponse)
 def upload_page(request: Request):
-    # For Milestone 1, alliances list is empty or fetched from DB (if present)
-    with _db.get_session() as session:
-        alliances = session.exec("SELECT id, name, server FROM alliance") if False else []
+    # For Milestone 1, return an empty alliances list if none exist
+    alliances = []
+    try:
+        with _db.get_session() as session:
+            stmt = select(Alliance.id, Alliance.name, Alliance.server)
+            rows = session.exec(stmt).all()
+            # convert to simple dicts for template
+            alliances = [{"id": r[0], "name": r[1], "server": r[2]} for r in rows]
+    except Exception:
+        # safe fallback to empty list
+        alliances = []
     return templates.TemplateResponse("upload.html", {"request": request, "alliances": alliances})
 
 @app.post("/upload")
@@ -67,5 +75,11 @@ def status():
 
 @app.get("/alliances")
 def list_alliances():
-    # placeholder endpoint returning empty list for Milestone 1
-    return []
+    # return list of alliances
+    try:
+        with _db.get_session() as session:
+            stmt = select(Alliance)
+            rows = session.exec(stmt).all()
+            return [r.dict() for r in rows]
+    except Exception:
+        return []
