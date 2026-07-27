@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+Jinja2
+python-multipart
+aiofiles
+sqlmodel
+pillow
+opencv-python
+openpyxl
+pytest
+httpx
+requests
